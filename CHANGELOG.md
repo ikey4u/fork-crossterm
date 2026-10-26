@@ -1,5 +1,10 @@
 # Unreleased
 
+## Fixed 🐛
+
+- Return terminal EOF and permanent read errors from both Unix event readers and
+  cursor-position queries instead of busy-looping after terminal disconnection.
+
 # Version 0.29
 
 ## Added ⭐

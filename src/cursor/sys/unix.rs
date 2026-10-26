@@ -50,7 +50,7 @@ fn read_position_raw() -> io::Result<(u16, u16)> {
                     "The cursor position could not be read within a normal duration",
                 ));
             }
-            Err(_) => {}
+            Err(error) => return Err(error),
         }
     }
 }

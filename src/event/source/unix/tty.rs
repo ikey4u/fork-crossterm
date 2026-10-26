@@ -88,6 +88,12 @@ impl UnixInternalEventSource {
 fn read_complete(fd: &FileDesc, buf: &mut [u8]) -> io::Result<usize> {
     loop {
         match fd.read(buf) {
+            Ok(0) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "terminal input closed",
+                ));
+            }
             Ok(x) => return Ok(x),
             Err(e) => match e.kind() {
                 io::ErrorKind::WouldBlock => return Ok(0),
@@ -144,7 +150,9 @@ impl EventSource for UnixInternalEventSource {
                 }
                 Ok(_) => (),
             };
-            if fds[0].revents & POLLIN != 0 {
+            // Read on HUP/ERR/NVAL too, so terminal loss is reported instead
+            // of repeatedly polling a permanently ready descriptor.
+            if fds[0].revents != 0 {
                 loop {
                     let read_count = read_complete(&self.tty, &mut self.tty_buffer)?;
                     if read_count > 0 {

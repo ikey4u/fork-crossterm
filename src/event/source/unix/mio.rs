@@ -94,13 +94,17 @@ impl EventSource for UnixInternalEventSource {
                     TTY_TOKEN => {
                         loop {
                             match self.tty_fd.read(&mut self.tty_buffer) {
+                                Ok(0) => {
+                                    return Err(io::Error::new(
+                                        io::ErrorKind::UnexpectedEof,
+                                        "terminal input closed",
+                                    ));
+                                }
                                 Ok(read_count) => {
-                                    if read_count > 0 {
-                                        self.parser.advance(
-                                            &self.tty_buffer[..read_count],
-                                            read_count == TTY_BUFFER_SIZE,
-                                        );
-                                    }
+                                    self.parser.advance(
+                                        &self.tty_buffer[..read_count],
+                                        read_count == TTY_BUFFER_SIZE,
+                                    );
                                 }
                                 Err(e) => {
                                     // No more data to read at the moment. We will receive another event
@@ -111,6 +115,7 @@ impl EventSource for UnixInternalEventSource {
                                     else if e.kind() == io::ErrorKind::Interrupted {
                                         continue;
                                     }
+                                    return Err(e);
                                 }
                             };
 
